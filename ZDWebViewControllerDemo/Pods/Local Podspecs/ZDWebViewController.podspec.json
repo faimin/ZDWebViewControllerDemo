@@ -1,0 +1,29 @@
+{
+  "name": "ZDWebViewController",
+  "version": "0.0.1",
+  "summary": "ZDWebViewController.",
+  "description": "A short description of ZDWebViewController.作为内置浏览器",
+  "homepage": "http://10.255.223.213/iOSReaderComponent/WebViewKit",
+  "license": "MIT",
+  "authors": {
+    "符现超": "fuxianchao@gmail.com"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source": {
+    "git": "http://10.255.223.213/iOSReaderComponent/WebViewKit.git",
+    "tag": "0.0.1"
+  },
+  "source_files": [
+    "Classes",
+    "ZDWebViewController/*.{h,m}"
+  ],
+  "frameworks": "WebKit",
+  "requires_arc": true,
+  "dependencies": {
+    "ReactiveCocoa": [
+      "~> 2.5"
+    ]
+  }
+}

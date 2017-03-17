@@ -1,0 +1,26 @@
+PODS:
+  - ReactiveCocoa (2.5):
+    - ReactiveCocoa/UI (= 2.5)
+  - ReactiveCocoa/Core (2.5):
+    - ReactiveCocoa/no-arc
+  - ReactiveCocoa/no-arc (2.5)
+  - ReactiveCocoa/UI (2.5):
+    - ReactiveCocoa/Core
+  - ZDWebViewController (0.0.1):
+    - ReactiveCocoa (~> 2.5)
+
+DEPENDENCIES:
+  - ReactiveCocoa (= 2.5)
+  - ZDWebViewController (from `../`)
+
+EXTERNAL SOURCES:
+  ZDWebViewController:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
+  ZDWebViewController: fbda79e81b22810a7c7253b5e38a29543c957055
+
+PODFILE CHECKSUM: 8aaf430ac1042f947ee613275aa16db11845d9f7
+
+COCOAPODS: 1.2.0
