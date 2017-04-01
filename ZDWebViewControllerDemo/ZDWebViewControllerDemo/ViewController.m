@@ -32,10 +32,11 @@
     
     NSString *urlStr = @"https://github.com/faimin";
     UIViewController *web = [ZDWebViewController webViewControllerWithURL:urlStr pushOrPresent:ShowType_Push];
-//    [self presentViewController:web animated:YES completion:^{
-//        NSLog(@"弹出");
-//    }];
-    
+    /*
+    [self presentViewController:web animated:YES completion:^{
+        NSLog(@"弹出");
+    }];
+    */
     [self.navigationController pushViewController:web animated:YES];
 }
 

@@ -229,6 +229,37 @@ UIKIT_STATIC_INLINE UIBarButtonItem *ZD_SpaceItem(CGFloat space) {
 
 /// 页面加载完成。 等同于UIWebViewDelegate: - webViewDidFinishLoad:
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    // 删除顶部导航和底部链接
+    NSMutableString *js1 = ({
+        NSMutableString *js = [[NSMutableString alloc] init];
+        [js appendString:@"var header = document.getElementsByTagName('header')[0];"];
+        [js appendString:@"header.parentNode.removeChild(header);"];
+        [js appendString:@"var footer = document.getElementsByTagName('footer')[0];"];
+        [js appendString:@"footer.parentNode.removeChild(footer);"];
+        js;
+    });
+    [webView evaluateJavaScript:js1 completionHandler:^(id _Nullable value, NSError * _Nullable error) {
+        if (error) {
+            NSLog(@"error = %@", error.localizedDescription);
+        }
+    }];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSMutableString *js2 = ({
+            NSMutableString *js = [[NSMutableString alloc] init];
+            [js appendString:@"var list = document.body.childNodes;"];
+            [js appendString:@"var len = list.length;"];
+            [js appendString:@"var banner = list[len-1];"];
+            [js appendString:@"banner.parentNode.removeChild(banner);"];
+            js;
+        });
+        [webView evaluateJavaScript:js2 completionHandler:^(id _Nullable value, NSError * _Nullable error) {
+            if (error) {
+                NSLog(@"error = %@", error.localizedDescription);
+            }
+        }];
+    });
+    
     NSLog(@"页面加载完成");
 }
 
