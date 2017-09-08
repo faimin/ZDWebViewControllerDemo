@@ -6,6 +6,7 @@
 //  Copyright © 2017年 Zero.D.Saber. All rights reserved.
 //
 //  https://my.oschina.net/dahuilang123/blog/850246
+//  http://www.tuicool.com/articles/n67n2yA
 
 #import "ZDWebViewController.h"
 #if __has_include(<ReactiveCocoa/ReactiveCocoa.h>)
