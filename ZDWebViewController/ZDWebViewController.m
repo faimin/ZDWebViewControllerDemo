@@ -33,7 +33,45 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 
 @implementation ZDWebViewController
 
-#pragma mark -
+#pragma mark - Public Method
+
++ (__kindof UIViewController *)webViewControllerWithURL:(NSString *)urlString
+                                          pushOrPresent:(ShowType)type {
+    __kindof UIViewController *vc = nil;
+    ZDWebViewController *webVC = [[self alloc] initWithURLString:urlString];
+    if (type == ShowType_Present) {
+        vc = [[UINavigationController alloc] initWithRootViewController:webVC];
+    }
+    else {
+        vc = webVC;
+    }
+    return vc;
+}
+
++ (void)cleanWKCache {
+    if (@available(iOS 9.0, *)) {
+#if DEBUG
+        [[WKWebsiteDataStore defaultDataStore] fetchDataRecordsOfTypes:[WKWebsiteDataStore allWebsiteDataTypes] completionHandler:^(NSArray<WKWebsiteDataRecord *> * _Nonnull webRecords) {
+            for (WKWebsiteDataRecord *record in webRecords) {
+                NSLog(@"%@", record.displayName);
+            }
+        }];
+#endif
+        
+        NSSet *websiteDataTypes = [NSSet setWithArray:@[WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]]; // [WKWebsiteDataStore allWebsiteDataTypes]
+        NSDate *dateFrom = [NSDate dateWithTimeIntervalSince1970:0];
+        // Execute
+        [[WKWebsiteDataStore defaultDataStore] removeDataOfTypes:websiteDataTypes modifiedSince:dateFrom completionHandler:^{
+            NSLog(@"WKCache 清理完毕");
+            // Done
+        }];
+    } else {
+        NSString *cachePath = [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingString:@"/Cookies"];
+        [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    }
+}
+
+#pragma mark - Life Cycle
 
 - (void)dealloc {
     if (_webView.isLoading) {
@@ -80,17 +118,7 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_9_0
-    [[WKWebsiteDataStore defaultDataStore] fetchDataRecordsOfTypes:[WKWebsiteDataStore allWebsiteDataTypes] completionHandler:^(NSArray<WKWebsiteDataRecord *> * _Nonnull webRecords) {
-        for (WKWebsiteDataRecord *record in webRecords) {
-            NSLog(@"%@", record.displayName);
-        }
-    }];
-    
-    [[WKWebsiteDataStore defaultDataStore] removeDataOfTypes:[WKWebsiteDataStore allWebsiteDataTypes] modifiedSince:[NSDate dateWithTimeIntervalSince1970:0] completionHandler:^{
-        NSLog(@"清理完毕");
-    }];
-#endif
+    [self.class cleanWKCache];
 }
 
 - (void)loadWebView {
@@ -154,35 +182,6 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     self.navigationItem.leftBarButtonItems = @[ZD_SpaceItem(-10), leftItem1, leftItem2];
     // 从右往左排列
     self.navigationItem.rightBarButtonItems = @[ZD_SpaceItem(-10), rightItem];
-}
-
-#pragma mark - Public Method
-
-+ (__kindof UIViewController *)webViewControllerWithURL:(NSString *)urlString
-                                          pushOrPresent:(ShowType)type {
-    __kindof UIViewController *vc = nil;
-    ZDWebViewController *webVC = [[self alloc] initWithURLString:urlString];
-    if (type == ShowType_Present) {
-        vc = [[UINavigationController alloc] initWithRootViewController:webVC];
-    }
-    else {
-        vc = webVC;
-    }
-    return vc;
-}
-
-+ (void)cleanWKCache {
-    if (@available(iOS 9, *)) {
-        NSSet *websiteDataTypes = [NSSet setWithArray:@[WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]];
-        NSDate *dateFrom = [NSDate dateWithTimeIntervalSince1970:0];
-        // Execute
-        [[WKWebsiteDataStore defaultDataStore] removeDataOfTypes:websiteDataTypes modifiedSince:dateFrom completionHandler:^{
-            // Done
-        }];
-    } else {
-        NSString *cachePath = [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingString:@"/Cookies"];
-        [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
-    }
 }
 
 #pragma mark - Privete Method
