@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
   s.source_files  = "ZDWebViewController/*.{h,m}"
   s.framework  = "WebKit"
   s.requires_arc = true
-  # s.dependency "ReactiveCocoa", "~> 2.5"
 
+  # s.dependency "ReactiveCocoa", "~> 2.5"
   # s.exclude_files = "Classes/Exclude"
 end

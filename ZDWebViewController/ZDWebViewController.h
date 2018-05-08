@@ -23,4 +23,6 @@ typedef NS_ENUM(NSUInteger, ShowType) {
 + (__kindof UIViewController *)webViewControllerWithURL:(NSString *)urlString
                                           pushOrPresent:(ShowType)type;
 
++ (void)cleanWKCache;
+
 @end

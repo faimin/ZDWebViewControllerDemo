@@ -19,32 +19,33 @@ UIKIT_STATIC_INLINE UIBarButtonItem *ZD_SpaceItem(CGFloat space) {
     return item;
 }
 
+NS_CLASS_AVAILABLE_IOS(8_0)
 @interface ZDWebViewController () <WKNavigationDelegate, WKUIDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) WKWebView *webView;
-@property (nonatomic, copy) NSString *urlString;
+@property (nonatomic, copy  ) NSString *urlString;
 @property (nonatomic, strong) UIButton *forwardButton;
 @property (nonatomic, strong) UIButton *backButton;
 @property (nonatomic, strong) NSLayoutConstraint *bottomViewHeightConstraint;
 @property (nonatomic, assign) CGFloat bottomViewHeight;
 @property (nonatomic, assign) double estimatedProgress;
-@property (nonatomic, weak) id <UIGestureRecognizerDelegate> originalDelegate;
+@property (nonatomic, weak  ) id <UIGestureRecognizerDelegate> originalDelegate;
 @end
 
 @implementation ZDWebViewController
 
 #pragma mark -
 
+- (void)dealloc {
+    if (_webView.isLoading) {
+        [_webView stopLoading];
+    }
+}
+
 - (instancetype)initWithURLString:(NSString *)urlString {
     if (self = [super init]) {
         _urlString = urlString;
     }
     return self;
-}
-
-- (void)dealloc {
-    if (_webView.isLoading) {
-        [_webView stopLoading];
-    }
 }
 
 - (void)viewDidLoad {
@@ -168,6 +169,20 @@ UIKIT_STATIC_INLINE UIBarButtonItem *ZD_SpaceItem(CGFloat space) {
         vc = webVC;
     }
     return vc;
+}
+
++ (void)cleanWKCache {
+    if (@available(iOS 9, *)) {
+        NSSet *websiteDataTypes = [NSSet setWithArray:@[WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]];
+        NSDate *dateFrom = [NSDate dateWithTimeIntervalSince1970:0];
+        // Execute
+        [[WKWebsiteDataStore defaultDataStore] removeDataOfTypes:websiteDataTypes modifiedSince:dateFrom completionHandler:^{
+            // Done
+        }];
+    } else {
+        NSString *cachePath = [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingString:@"/Cookies"];
+        [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+    }
 }
 
 #pragma mark - Privete Method
