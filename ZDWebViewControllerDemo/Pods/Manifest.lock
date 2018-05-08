@@ -1,29 +1,23 @@
 PODS:
-  - ReactiveCocoa (2.5):
-    - ReactiveCocoa/UI (= 2.5)
-  - ReactiveCocoa/Core (2.5):
-    - ReactiveCocoa/no-arc
-  - ReactiveCocoa/no-arc (2.5)
-  - ReactiveCocoa/UI (2.5):
-    - ReactiveCocoa/Core
+  - ReactiveObjC (3.1.0)
   - ZDWebViewController (0.0.1)
 
 DEPENDENCIES:
-  - ReactiveCocoa (= 2.5)
+  - ReactiveObjC
   - ZDWebViewController (from `../`)
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
-    - ReactiveCocoa
+    - ReactiveObjC
 
 EXTERNAL SOURCES:
   ZDWebViewController:
     :path: "../"
 
 SPEC CHECKSUMS:
-  ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
+  ReactiveObjC: 2a38ea15335de4119d8b17caf1db1484f61db902
   ZDWebViewController: e30693538bf55eaecc2e9bab3c938853782f0374
 
-PODFILE CHECKSUM: 8aaf430ac1042f947ee613275aa16db11845d9f7
+PODFILE CHECKSUM: 82c4adb49924c3580b6e1b9b0b89b326d1d7ec5c
 
 COCOAPODS: 1.5.0

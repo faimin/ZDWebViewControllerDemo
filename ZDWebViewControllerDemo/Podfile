@@ -6,7 +6,8 @@ target 'ZDWebViewControllerDemo' do
   # use_frameworks!
 
   # Pods for ZDWebViewControllerDemo
-  pod 'ReactiveCocoa', '2.5'
+  # pod 'ReactiveCocoa', '2.5'
+  pod 'ReactiveObjC'
   pod 'ZDWebViewController', :path => '../'
 
   target 'ZDWebViewControllerDemoTests' do
