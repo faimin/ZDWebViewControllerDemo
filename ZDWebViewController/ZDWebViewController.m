@@ -11,6 +11,8 @@
 #import "ZDWebViewController.h"
 #if __has_include(<ReactiveCocoa/ReactiveCocoa.h>)
 #import <ReactiveCocoa/ReactiveCocoa.h>
+#elif __has_include(<ReactiveObjC/ReactiveObjC.h>)
+#import <ReactiveObjC/ReactiveObjC.h>
 #endif
 
 UIKIT_STATIC_INLINE UIBarButtonItem *ZD_SpaceItem(CGFloat space) {
@@ -121,21 +123,21 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     [self.class cleanWKCache];
 }
 
-- (void)loadWebView {
-    [self loadWebViewWithURLString:_urlString];
-}
-
 - (void)setupView {
     [self setupNavigatioinItems];
     [self webView];
     [self setupBottomView];
     
-#if __has_include(<ReactiveCocoa/ReactiveCocoa.h>)
+#if (__has_include(<ReactiveCocoa/ReactiveCocoa.h>) || __has_include(<ReactiveObjC/ReactiveObjC.h>))
     RAC(self, estimatedProgress) = RACObserve(self.webView, estimatedProgress);
     RAC(self, title) = RACObserve(self.webView, title);
     RAC(self.backButton, enabled) = RACObserve(self.webView, canGoBack);
     RAC(self.forwardButton, enabled) = RACObserve(self.webView, canGoForward);
 #endif
+}
+
+- (void)loadWebView {
+    [self loadWebViewWithURLString:_urlString];
 }
 
 - (void)setupNavigatioinItems {
@@ -245,14 +247,11 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 /// 页面加载完成。 等同于UIWebViewDelegate: - webViewDidFinishLoad:
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     // 删除顶部导航和底部链接
-    NSMutableString *js1 = ({
-        NSMutableString *js = [[NSMutableString alloc] init];
-        [js appendString:@"var header = document.getElementsByTagName('header')[0];"];
-        [js appendString:@"header.parentNode.removeChild(header);"];
-        [js appendString:@"var footer = document.getElementsByTagName('footer')[0];"];
-        [js appendString:@"footer.parentNode.removeChild(footer);"];
-        js;
-    });
+    NSString *js1 = @"var header = document.getElementsByTagName('header')[0];"
+    "header.parentNode.removeChild(header);"
+    "var footer = document.getElementsByTagName('footer')[0];"
+    "footer.parentNode.removeChild(footer);";
+    
     [webView evaluateJavaScript:js1 completionHandler:^(id _Nullable value, NSError * _Nullable error) {
         if (error) {
             NSLog(@"error = %@", error.localizedDescription);
@@ -260,20 +259,32 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     }];
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSMutableString *js2 = ({
-            NSMutableString *js = [[NSMutableString alloc] init];
-            [js appendString:@"var list = document.body.childNodes;"];
-            [js appendString:@"var len = list.length;"];
-            [js appendString:@"var banner = list[len-1];"];
-            [js appendString:@"banner.parentNode.removeChild(banner);"];
-            js;
-        });
+        NSString *js2 = @"var list = document.body.childNodes;"
+        "var len = list.length;"
+        "var banner = list[len-1];"
+        "banner.parentNode.removeChild(banner);";
+        
         [webView evaluateJavaScript:js2 completionHandler:^(id _Nullable value, NSError * _Nullable error) {
             if (error) {
                 NSLog(@"error = %@", error.localizedDescription);
             }
         }];
     });
+    
+    // 禁止放大缩小
+    NSString *disableScaleJSString = @"var script = document.createElement('meta');"
+    "script.name = 'viewport';"
+    "script.content=\"width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no\";"
+    "document.getElementsByTagName('head')[0].appendChild(script);";
+    [webView evaluateJavaScript:disableScaleJSString completionHandler:^(id _Nullable value, NSError * _Nullable error) {
+        if (error) {
+            NSLog(@"error = %@", error.localizedDescription);
+        }
+    }];
+    
+    if (self.injectionJSBlock) {
+        self.injectionJSBlock(webView);
+    }
     
     NSLog(@"页面加载完成");
 }
@@ -374,14 +385,14 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     [self presentViewController:alertView animated:YES completion:nil];
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_10_0
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
 /// 这个方法只会调用元素在WebKit默认的预览,这是限于链接。在未来,它可以调用附加的元素
-- (BOOL)webView:(WKWebView *)webView shouldPreviewElement:(WKPreviewElementInfo *)elementInfo {
+- (BOOL)webView:(WKWebView *)webView shouldPreviewElement:(WKPreviewElementInfo *)elementInfo API_AVAILABLE(ios(10.0)) {
     NSLog(@"%@", NSStringFromSelector(_cmd));
     return YES;
 }
 
-- (UIViewController *)webView:(WKWebView *)webView previewingViewControllerForElement:(WKPreviewElementInfo *)elementInfo defaultActions:(NSArray<id<WKPreviewActionItem>> *)previewActions {
+- (UIViewController *)webView:(WKWebView *)webView previewingViewControllerForElement:(WKPreviewElementInfo *)elementInfo defaultActions:(NSArray<id<WKPreviewActionItem>> *)previewActions  API_AVAILABLE(ios(10.0)) {
     NSLog(@"%@", NSStringFromSelector(_cmd));
     return nil;
 }
@@ -446,22 +457,27 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 - (WKWebView *)webView {
     if (!_webView) {
         _webView = ({
-            WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
             WKPreferences *preferences = [[WKPreferences alloc] init];
             preferences.javaScriptCanOpenWindowsAutomatically = YES;
             preferences.javaScriptEnabled = YES;
+            
+            WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
             config.preferences = preferences;
             config.allowsInlineMediaPlayback = YES;
             
+            if (self.extendConfigurationBlock) {
+                self.extendConfigurationBlock(config);
+            }
+            
             WKWebView *webView = [[WKWebView alloc] initWithFrame:(CGRect){CGPointZero, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds)-_bottomViewHeight} configuration:config];
+            webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             webView.backgroundColor = [UIColor colorWithRed:0.157 green:0.137 blue:0 alpha:1];
             webView.navigationDelegate = self;
             webView.UIDelegate = self;
             webView.allowsBackForwardNavigationGestures = YES;
-            if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
+            if (@available(iOS 9.0, *)) {
                 webView.allowsLinkPreview = YES;
             }
-            webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             [self.view addSubview:webView];
             
             webView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -476,14 +492,5 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 }
 
 @end
-
-
-
-
-
-
-
-
-
 
 
