@@ -2,11 +2,12 @@
 //  ZDWebViewController.m
 //  ZDWebViewControllerDemo
 //
-//  Created by 符现超 on 2017/3/13.
+//  Created by Zero.D.Saber on 2017/3/13.
 //  Copyright © 2017年 Zero.D.Saber. All rights reserved.
 //
 //  https://my.oschina.net/dahuilang123/blog/850246
 //  http://www.tuicool.com/articles/n67n2yA
+//  https://www.tuicool.com/articles/fAjeeu6
 
 #import "ZDWebViewController.h"
 #if __has_include(<ReactiveCocoa/ReactiveCocoa.h>)
@@ -15,18 +16,21 @@
 #import <ReactiveObjC/ReactiveObjC.h>
 #endif
 
+#define IS_IPHONE_X CGSizeEqualToSize([[UIScreen mainScreen] bounds].size, CGSizeMake(375.f, 812.f))
+
 UIKIT_STATIC_INLINE UIBarButtonItem *ZD_SpaceItem(CGFloat space) {
     UIBarButtonItem *item = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:NULL];
     item.width = space;
     return item;
 }
 
-NS_CLASS_AVAILABLE_IOS(8_0)
+NS_CLASS_AVAILABLE_IOS(9_0)
 @interface ZDWebViewController () <WKNavigationDelegate, WKUIDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, copy  ) NSString *urlString;
 @property (nonatomic, strong) UIButton *forwardButton;
 @property (nonatomic, strong) UIButton *backButton;
+@property (nonatomic, strong) UIProgressView *progressView;
 @property (nonatomic, strong) NSLayoutConstraint *bottomViewHeightConstraint;
 @property (nonatomic, assign) CGFloat bottomViewHeight;
 @property (nonatomic, assign) double estimatedProgress;
@@ -98,6 +102,7 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     self.bottomViewHeight = _bottomViewHeight ?: 49;
     
     [self setupView];
+    [self setupMonitor];
     [self loadWebView];
 }
 
@@ -125,11 +130,19 @@ NS_CLASS_AVAILABLE_IOS(8_0)
 
 - (void)setupView {
     [self setupNavigatioinItems];
-    [self webView];
-    [self setupBottomView];
     
+    [self webView];
+    
+    [self.view addSubview:self.progressView];
+    
+    [self setupBottomView];
+}
+
+- (void)setupMonitor {
 #if (__has_include(<ReactiveCocoa/ReactiveCocoa.h>) || __has_include(<ReactiveObjC/ReactiveObjC.h>))
-    RAC(self, estimatedProgress) = RACObserve(self.webView, estimatedProgress);
+    RACSignal *progressSignal = [RACObserve(self.webView, estimatedProgress) replayLast];
+    RAC(self, estimatedProgress) = progressSignal;
+    RAC(self.progressView, progress) = progressSignal;
     RAC(self, title) = RACObserve(self.webView, title);
     RAC(self.backButton, enabled) = RACObserve(self.webView, canGoBack);
     RAC(self.forwardButton, enabled) = RACObserve(self.webView, canGoForward);
@@ -299,7 +312,7 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     NSLog(@"页面数据加载过程中：%@", error.localizedDescription);
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_9_0
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
 /// 加载中断时调用
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
     NSLog(@"加载中断");
@@ -454,6 +467,28 @@ NS_CLASS_AVAILABLE_IOS(8_0)
     [self.view addConstraints:@[bottomConstraint, heightConstraint, topConstraint]];
 }
 
+- (UIProgressView *)progressView {
+    if (!_progressView) {
+        UIProgressView *view = [[UIProgressView alloc] initWithFrame:/*CGRectMake(0, (IS_IPHONE_X ? 88.0 : 64.0) + 1, CGRectGetWidth(self.view.frame), 2)*/ CGRectZero];
+        view.tintColor = [UIColor blueColor];
+        view.trackTintColor = [UIColor clearColor];
+        [self.view addSubview:view];
+        
+        view.translatesAutoresizingMaskIntoConstraints = NO;
+        NSArray *horizonConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"H:|[view]|" options:NSLayoutFormatDirectionLeftToRight metrics:nil views:@{@"view":view}];
+        [NSLayoutConstraint activateConstraints:horizonConstraints];
+        [view.heightAnchor constraintEqualToConstant:2.0].active = YES;
+        if (@available(iOS 11.0, *)) {
+            [view.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
+        } else {
+            [view.topAnchor constraintEqualToAnchor:self.topLayoutGuide.bottomAnchor].active = YES;
+        }
+        
+        _progressView = view;
+    }
+    return _progressView;
+}
+
 - (WKWebView *)webView {
     if (!_webView) {
         _webView = ({
@@ -464,6 +499,12 @@ NS_CLASS_AVAILABLE_IOS(8_0)
             WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
             config.preferences = preferences;
             config.allowsInlineMediaPlayback = YES;
+            // 设置视频是否需要用户手动播放，设置为NO则会允许自动播放
+            if (@available(iOS 10.0, *)) {
+                config.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeAll;
+            } else if (@available(iOS 9.0, *)) {
+                config.requiresUserActionForMediaPlayback = YES;
+            }
             
             if (self.extendConfigurationBlock) {
                 self.extendConfigurationBlock(config);
@@ -482,9 +523,13 @@ NS_CLASS_AVAILABLE_IOS(8_0)
             
             webView.translatesAutoresizingMaskIntoConstraints = NO;
             NSArray *horizonConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"H:|[webView]|" options:NSLayoutFormatDirectionLeftToRight metrics:nil views:@{@"webView":webView}];
-            NSLayoutConstraint *topConstraint = [NSLayoutConstraint constraintWithItem:webView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0];
-            [self.view addConstraints:horizonConstraints];
-            [self.view addConstraint:topConstraint];
+            //NSLayoutConstraint *topConstraint = [NSLayoutConstraint constraintWithItem:webView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0];
+            //[self.view addConstraints:horizonConstraints];
+            //[self.view addConstraint:topConstraint];
+            [NSLayoutConstraint activateConstraints:horizonConstraints];
+            [webView.topAnchor constraintEqualToAnchor:self.view.topAnchor].active = YES;
+            [webView.heightAnchor constraintEqualToAnchor:self.view.heightAnchor].active = YES;
+
             webView;
         });
     }

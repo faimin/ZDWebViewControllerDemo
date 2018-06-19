@@ -7,7 +7,7 @@ DEPENDENCIES:
   - ZDWebViewController (from `../`)
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
+  https://github.com/cocoapods/specs.git:
     - ReactiveObjC
 
 EXTERNAL SOURCES:
@@ -16,8 +16,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   ReactiveObjC: 2a38ea15335de4119d8b17caf1db1484f61db902
-  ZDWebViewController: e30693538bf55eaecc2e9bab3c938853782f0374
+  ZDWebViewController: 54703563f0927463c92a3ab5555ad56befb6f637
 
-PODFILE CHECKSUM: 82c4adb49924c3580b6e1b9b0b89b326d1d7ec5c
+PODFILE CHECKSUM: 1f47bb4f708d524c47345466fb19afd21da327b2
 
-COCOAPODS: 1.5.0
+COCOAPODS: 1.5.3

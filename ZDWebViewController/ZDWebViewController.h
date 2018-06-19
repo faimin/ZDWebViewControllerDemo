@@ -2,7 +2,7 @@
 //  ZDWebViewController.h
 //  ZDWebViewControllerDemo
 //
-//  Created by 符现超 on 2017/3/13.
+//  Created by Zero.D.Saber on 2017/3/13.
 //  Copyright © 2017年 Zero.D.Saber. All rights reserved.
 //
 
@@ -14,6 +14,9 @@ typedef NS_ENUM(NSUInteger, ShowType) {
     ShowType_Present,
 };
 
+NS_ASSUME_NONNULL_BEGIN
+
+NS_CLASS_AVAILABLE_IOS(9_0)
 @interface ZDWebViewController : UIViewController
 
 @property (nonatomic, strong, readonly) NSLayoutConstraint *bottomViewHeightConstraint;
@@ -36,3 +39,8 @@ typedef NS_ENUM(NSUInteger, ShowType) {
 + (void)cleanWKCache;
 
 @end
+
+NS_ASSUME_NONNULL_END
+
+
+

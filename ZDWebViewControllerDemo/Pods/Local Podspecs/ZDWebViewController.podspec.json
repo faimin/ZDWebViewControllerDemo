@@ -9,7 +9,7 @@
     "Zero.D.Saber": "fuxianchao@gmail.com"
   },
   "platforms": {
-    "ios": "8.0"
+    "ios": "9.0"
   },
   "source": {
     "git": "http://10.255.223.213/iOSReaderComponent/WebViewKit.git",
